@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="text-align: center; padding: 20px;">
+    <h2 style="color:#2ecc71;">🎉 Order Placed Successfully!</h2>
+    <p>Thank you for your business. Your receipt record transaction has completed validation.</p>
+    
+    <div style="background:#f9f9f9; border:1px dashed #ccc; padding:20px; display:inline-block; margin: 20px 0; border-radius:6px; min-width: 300px;">
+        <h3>Order Receipt Summary</h3>
+        <p><strong>Order ID:</strong> #{{ order.order_id }}</p>
+        <p><strong>Total Billed:</strong> ${{ "%.2f"|format(order.total_amount) }}</p>
+        <p><strong>Initial Status:</strong> {{ order.status }}</p>
+    </div>
+    <br>
+    <a href="{{ url_for('order_status', order_id=order.order_id) }}" class="btn">Track Order Live Status</a>
+</div>
+{% endblock %}

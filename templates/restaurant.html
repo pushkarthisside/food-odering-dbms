@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ restaurant.name }} Menu</h2>
+<p style="color:#777;">📍 Location: {{ restaurant.address }}</p>
+<hr>
+
+{% for item in menu_items %}
+<div class="card">
+    <div>
+        <strong style="font-size:1.1em;">{{ item.name }}</strong> 
+        <span class="badge">{{ item.category_name }}</span>
+        <p style="margin: 5px 0 0 0; color: #2ecc71; font-weight: bold;">${{ "%.2f"|format(item.price) }}</p>
+    </div>
+    <form action="{{ url_for('add_to_cart') }}" method="POST">
+        <input type="hidden" name="item_id" value="{{ item.item_id }}">
+        <input type="hidden" name="name" value="{{ item.name }}">
+        <input type="hidden" name="price" value="{{ item.price }}">
+        <input type="hidden" name="restaurant_name" value="{{ restaurant.name }}">
+        <button type="submit" class="btn">Add to Cart</button>
+    </form>
+</div>
+{% endfor %}
+{% endblock %}

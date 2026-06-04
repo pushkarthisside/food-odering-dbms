@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Select a Restaurant</h2>
+<hr>
+{% for res in restaurants %}
+<div class="card">
+    <div>
+        <h3>{{ res.name }}</h3>
+        <p style="color:#666; margin: 0;">📍 {{ res.address }} | 📞 {{ res.phone }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('restaurant', restaurant_id=res.restaurant_id) }}" class="btn btn-secondary">View Menu</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
