@@ -1,6 +1,17 @@
-# Food Ordering System - DBMS Project
+# QuickBite Food Ordering System - DBMS Project
 
-A Python-based food ordering application with MySQL database integration.
+A comprehensive, Python-based multi-restaurant food ordering application utilizing Flask, Jinja2 templating, and a fully normalized MySQL database with built-in transactional triggers.
+
+---
+
+## ✨ Key Features
+
+* **Modern, Responsive UI**: Built with a custom CSS token system (`--surface`, `--accent`) for a clean, immersive experience across all devices.
+* **Secure User Authentication**: Complete login and signup workflows with SHA-256 password hashing and secure session management.
+* **Atomic Cart System**: Enforces single-restaurant ordering logic with real-time total calculations.
+* **Simulated Payment Engine**: Features an interactive payment terminal (Card, UPI, Cash on Delivery) that seamlessly triggers backend state updates.
+* **Live Order Tracking**: Dynamic status page (`status.html`) with CSS keyframe pulse animations to track orders from "Placed" to "Delivered".
+* **Database Triggers**: Uses robust MySQL triggers (`after_order_insert`, `after_payment_update`) to instantly synchronize payment logs with parent order states.
 
 ---
 
@@ -10,8 +21,8 @@ A Python-based food ordering application with MySQL database integration.
 
 ```bash
 # Clone the project
-git clone <your-repo-url>
-cd dbms
+git clone <https://github.com/pushkarthisside/food-odering-dbms/>
+cd food-odering-dbms
 
 # (Optional) Create a virtual environment
 python -m venv venv
@@ -20,22 +31,25 @@ venv\Scripts\activate  # Windows
 source venv/bin/activate  # macOS/Linux
 ```
 
-### 2. Set Up MySQL Password
+### 2. Set Up Environment Variables (Security Update)
 
-Edit `db.py` and update your MySQL credentials:
+Do **not** hardcode your passwords! We use a `.env` file to keep credentials secure.
 
-```python
-# --- UPDATE YOUR MYSQL CREDENTIALS HERE ---
-DB_USER = "root"
-DB_PASS = "your_password_here"  # Change this to your MySQL password
-DB_HOST = "localhost"
-DB_NAME = "food_ordering"
+1. Create a file named `.env` in the root folder.
+2. Add your MySQL credentials and a Flask secret key:
+
+```text
+DB_USER=root
+DB_PASS=your_mysql_password_here
+DB_HOST=localhost
+DB_NAME=food_ordering
+FLASK_SECRET_KEY=super_secret_dev_key
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-pip install flask mysql-connector-python
+pip install flask mysql-connector-python python-dotenv
 ```
 
 ### 4. Initialize Database
@@ -43,6 +57,8 @@ pip install flask mysql-connector-python
 ```bash
 python db.py
 ```
+
+*This automatically generates the schema, sets up triggers, and seeds the initial restaurants, menu items, and demo users.*
 
 ### 5. Run the Application
 
@@ -52,152 +68,123 @@ python app.py
 
 Visit `http://localhost:5000` in your browser.
 
----
-
-## 📊 Database Schema
-
-The application uses the following tables:
-
-- **users** - Customer information
-- **restaurants** - Restaurant details
-- **categories** - Food categories (Starters, Main Course, Drinks, etc.)
-- **menu_items** - Food items with prices
-- **orders** - Customer orders
-- **order_items** - Items in each order
-- **payments** - Payment information
+*(Demo Account: `demo@food.com` / `demo123`)*
 
 ---
 
-## 💾 Sample SQL Commands
+## 📊 Database Schema & Triggers
 
-### View All Users
-```sql
-SELECT * FROM users;
-```
+The application uses the following 3NF-normalized tables:
 
-### View All Restaurants
-```sql
-SELECT restaurant_id, name, address, phone, is_active FROM restaurants;
-```
+* **users** - Cryptographic profiles and contact routing
+* **restaurants** - Active vendor kitchens
+* **categories** - Menu classification tags
+* **menu_items** - Independent inventory pricing items
+* **orders** - Parent transaction ledger
+* **order_items** - Individual line items (locks historical price at checkout)
+* **payments** - Financial tracking logs
 
-### View Menu Items with Restaurant Names
-```sql
-SELECT 
-    m.name AS item_name, 
-    r.name AS restaurant, 
-    c.name AS category, 
-    m.price
-FROM menu_items m
-JOIN restaurants r ON m.restaurant_id = r.restaurant_id
-JOIN categories c ON m.category_id = c.category_id;
-```
+**Active MySQL Triggers:**
 
-### View All Orders
-```sql
-SELECT order_id, user_id, order_time, status, total_amount FROM orders;
-```
+* `after_order_insert`: Auto-generates a pending payment log when an order is created.
+* `after_payment_update`: Auto-promotes the parent order status to "Confirmed" once a payment is marked as "Paid".
 
-### View Order Details (What items in each order)
+---
+
+## 💾 Live Demo SQL Commands
+
+Use these commands in your MySQL terminal during presentations to prove real-time database state changes.
+
+### The "All-in-One" Verification Query (JOIN)
+
+*Run this before and after making a payment to show the database triggers working instantly.*
+
 ```sql
 SELECT 
     o.order_id, 
-    u.name AS customer, 
-    oi.item_id, 
+    o.status AS order_status, 
+    p.method AS payment_method, 
+    p.status AS payment_status,
+    o.total_amount
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+ORDER BY o.order_time DESC;
+```
+
+### Check Specific Order Breakdown
+
+```sql
+SELECT 
+    oi.order_id, 
     m.name AS item_name, 
     oi.quantity, 
-    oi.price_at_order
-FROM orders o
-JOIN users u ON o.user_id = u.user_id
-JOIN order_items oi ON o.order_id = oi.order_id
-JOIN menu_items m ON oi.item_id = m.item_id;
+    oi.price_at_order,
+    (oi.quantity * oi.price_at_order) AS subtotal
+FROM order_items oi
+JOIN menu_items m ON oi.item_id = m.item_id
+WHERE oi.order_id = 1;
 ```
 
-### View Payment Status
+### Total Revenue Earned (Business Analytics)
+
 ```sql
-SELECT 
-    p.payment_id, 
-    o.order_id, 
-    u.name AS customer, 
-    p.method, 
-    p.status, 
-    o.total_amount
-FROM payments p
-JOIN orders o ON p.order_id = o.order_id
-JOIN users u ON o.user_id = u.user_id;
+SELECT SUM(total_amount) AS total_revenue 
+FROM orders 
+WHERE status = 'Confirmed' OR status = 'Delivered';
 ```
 
-### Count Orders by Restaurant
-```sql
-SELECT 
-    r.name, 
-    COUNT(o.order_id) AS total_orders
-FROM restaurants r
-LEFT JOIN menu_items m ON r.restaurant_id = m.restaurant_id
-LEFT JOIN order_items oi ON m.item_id = oi.item_id
-LEFT JOIN orders o ON oi.order_id = o.order_id
-GROUP BY r.restaurant_id, r.name;
-```
+### ⏩ Simulate Order Completion
 
-### Find Most Popular Items
+*Run this to manually force an order to "Delivered" and watch the frontend tracking UI update.*
+
 ```sql
-SELECT 
-    m.name, 
-    r.name AS restaurant, 
-    COUNT(oi.order_item_id) AS times_ordered,
-    SUM(oi.quantity) AS total_quantity
-FROM menu_items m
-JOIN restaurants r ON m.restaurant_id = r.restaurant_id
-LEFT JOIN order_items oi ON m.item_id = oi.item_id
-GROUP BY m.item_id
-ORDER BY times_ordered DESC;
+UPDATE orders SET status = 'Delivered' WHERE order_id = 1;
 ```
 
 ---
 
 ## 📝 Project Structure
 
-```
+```text
 .
-├── app.py              # Flask application
-├── db.py               # Database setup & initialization
-├── templates/          # HTML templates
-│   ├── base.html
-│   ├── home.html
-│   ├── restaurant.html
-│   ├── cart.html
-│   ├── confirmation.html
-│   └── status.html
-├── .gitignore          # Ignore database files
+├── app.py              # Flask application & routing logic
+├── db.py               # Database setup, trigger init, & core SQL functions
+├── templates/          # Jinja2 HTML templates
+│   ├── base.html       # Master layout & responsive navbar
+│   ├── home.html       # Restaurant catalog dashboard
+│   ├── login.html      # Secure user authentication
+│   ├── signup.html     # New user registration
+│   ├── restaurant.html # Categorized menus & add-to-cart actions
+│   ├── cart.html       # Persistent session cart & totals
+│   ├── checkout.html   # Shipping logistics
+│   ├── payment.html    # Interactive simulated payment terminal
+│   ├── confirmation.html # Post-order success screen
+│   ├── my_orders.html  # Historical transaction archive
+│   └── status.html     # Live order tracking with CSS animations
+├── .env.example        # Template for environment variables
+├── .gitignore          # Ignores sensitive keys (.env) and caches
 └── README.md           # This file
 ```
-
----
-
-## ⚙️ Database Initialization
-
-When you run `python db.py`, it automatically:
-1. Creates the MySQL database (if it doesn't exist)
-2. Creates all necessary tables
-3. Sets up database triggers for orders & payments
-4. Seeds sample data (restaurants, menu items, users)
 
 ---
 
 ## 🔧 Troubleshooting
 
 **MySQL Connection Error?**
-- Ensure MySQL is running
-- Check your credentials in `db.py`
-- Verify database name exists
 
-**Port Already in Use?**
-- Change the port in `app.py`: `app.run(port=5001)`
+* Ensure your MySQL server service is actively running.
+* Check that your `.env` file variables exactly match your local MySQL credentials.
 
-**Missing Dependencies?**
-- Run: `pip install -r requirements.txt`
+**ModuleNotFoundError: No module named 'dotenv'?**
+
+* Ensure you activated your virtual environment and ran `pip install python-dotenv`.
+
+**Changes Not Saving to GitHub?**
+
+* If your terminal warns about LF/CRLF line endings, it is normal cross-platform conversion behavior.
 
 ---
 
 ## 📄 License
 
-This project is for educational purposes.
+This project was developed for educational and demonstration purposes as part of a Database Management Systems (DBMS) curriculum.
