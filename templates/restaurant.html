@@ -1,23 +1,137 @@
-{% extends 'base.html' %}
-{% block content %}
-<h2>{{ restaurant.name }} Menu</h2>
-<p style="color:#777;">📍 Location: {{ restaurant.address }}</p>
-<hr>
+{% extends "base.html" %}
+{% block title %}{{ restaurant.name }} — QuickBite{% endblock %}
 
-{% for item in menu_items %}
-<div class="card">
-    <div>
-        <strong style="font-size:1.1em;">{{ item.name }}</strong> 
-        <span class="badge">{{ item.category_name }}</span>
-        <p style="margin: 5px 0 0 0; color: #2ecc71; font-weight: bold;">${{ "%.2f"|format(item.price) }}</p>
+{% block extra_head %}
+<style>
+  .resto-header {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .resto-icon {
+    font-size: 3.2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 76px; height: 76px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .resto-header-info { flex: 1; }
+  .resto-header-name {
+    font-family: 'Fraunces', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .resto-header-meta {
+    display: flex; align-items: center; gap: 12px;
+    font-size: .85rem; color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .sep { color: var(--border); }
+
+  .menu-section { margin-bottom: 36px; }
+  .menu-section-title {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .menu-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    transition: border-color .15s;
+  }
+  .menu-card:hover { border-color: var(--accent); }
+  .menu-card-name { font-weight: 600; font-size: .95rem; margin-bottom: 4px; }
+  .menu-card-desc { font-size: .82rem; color: var(--muted); flex: 1; margin-bottom: 12px; line-height: 1.4; }
+  .menu-card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .menu-price { font-weight: 700; font-size: 1rem; color: var(--accent); }
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .add-btn:hover { background: var(--accent-lt); }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: .88rem;
+    margin-bottom: 20px;
+    transition: color .15s;
+  }
+  .back-link:hover { color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <a href="{{ url_for('home') }}" class="back-link">← Back to restaurants</a>
+
+  {% set emoji_map = {
+    'American': '🍔', 'Italian': '🍕', 'Chinese': '🥡',
+    'Japanese': '🍣', 'Mexican': '🌮'
+  } %}
+
+  <div class="resto-header">
+    <div class="resto-icon">{{ emoji_map.get(restaurant.cuisine, '🍽️') }}</div>
+    <div class="resto-header-info">
+      <div class="resto-header-name">{{ restaurant.name }}</div>
+      <div class="resto-header-meta">
+        <span class="tag">{{ restaurant.cuisine }}</span>
+        <span class="sep">·</span>
+        <span class="stars">★ {{ restaurant.rating }}</span>
+        <span class="sep">·</span>
+        <span>{{ restaurant.delivery_time }}</span>
+        <span class="sep">·</span>
+        <span>{{ restaurant.address }}</span>
+      </div>
     </div>
-    <form action="{{ url_for('add_to_cart') }}" method="POST">
-        <input type="hidden" name="item_id" value="{{ item.item_id }}">
-        <input type="hidden" name="name" value="{{ item.name }}">
-        <input type="hidden" name="price" value="{{ item.price }}">
-        <input type="hidden" name="restaurant_name" value="{{ restaurant.name }}">
-        <button type="submit" class="btn">Add to Cart</button>
-    </form>
+  </div>
+
+  {% for category, items in grouped_menu.items() %}
+  <div class="menu-section">
+    <div class="menu-section-title">{{ category }}</div>
+    <div class="menu-grid">
+      {% for item in items %}
+      <div class="menu-card">
+        <div class="menu-card-name">{{ item.name }}</div>
+        <div class="menu-card-desc">{{ item.description }}</div>
+        <div class="menu-card-footer">
+          <span class="menu-price">${{ "%.2f"|format(item.price) }}</span>
+          <form method="POST" action="{{ url_for('add_to_cart') }}" style="margin:0;">
+            <input type="hidden" name="item_id"         value="{{ item.item_id }}">
+            <input type="hidden" name="name"            value="{{ item.name }}">
+            <input type="hidden" name="price"           value="{{ item.price }}">
+            <input type="hidden" name="restaurant_name" value="{{ restaurant.name }}">
+            <input type="hidden" name="restaurant_id"   value="{{ restaurant.restaurant_id }}">
+            <button type="submit" class="add-btn">+ Add</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
-{% endfor %}
 {% endblock %}

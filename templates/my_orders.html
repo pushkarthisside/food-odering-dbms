@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}My Orders — QuickBite{% endblock %}
+
+{% block extra_head %}
+<style>
+  .orders-title { font-family: 'Fraunces', serif; font-size: 1.6rem; margin-bottom: 24px; }
+  .order-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 12px;
+    transition: border-color .15s;
+  }
+  .order-row:hover { border-color: var(--accent); }
+  .order-id { font-size: 1.1rem; font-weight: 700; min-width: 50px; }
+  .order-info { flex: 1; }
+  .order-addr { font-size: .9rem; font-weight: 500; }
+  .order-time { font-size: .8rem; color: var(--muted); margin-top: 3px; }
+  .order-amount { font-weight: 700; font-size: 1rem; color: var(--accent); min-width: 70px; text-align: right; }
+  .status-pill {
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .s-confirmed { background: rgba(74,222,128,.15); color: var(--green); }
+  .s-pending   { background: rgba(250,204,21,.15); color: var(--yellow); }
+  .s-other     { background: var(--surface2); color: var(--muted); }
+
+  .empty { text-align: center; padding: 60px 0; color: var(--muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1 class="orders-title">My Orders</h1>
+
+  {% if orders %}
+  {% for o in orders %}
+  <a href="{{ url_for('order_status', order_id=o.order_id) }}" class="order-row" style="text-decoration:none;">
+    <div class="order-id">#{{ o.order_id }}</div>
+    <div class="order-info">
+      <div class="order-addr">{{ o.delivery_address }}</div>
+      <div class="order-time">{{ o.order_time.strftime('%d %b %Y, %I:%M %p') }}</div>
+    </div>
+    <span class="status-pill
+      {% if o.status == 'Confirmed' %}s-confirmed
+      {% elif o.status == 'Pending' %}s-pending
+      {% else %}s-other{% endif %}">
+      {{ o.status }}
+    </span>
+    <div class="order-amount">${{ "%.2f"|format(o.total_amount) }}</div>
+  </a>
+  {% endfor %}
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📋</div>
+    <p>You haven't placed any orders yet.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin-top:16px;">Browse restaurants</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

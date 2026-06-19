@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Checkout — QuickBite{% endblock %}
+
+{% block extra_head %}
+<style>
+  .checkout-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 28px;
+    align-items: start;
+  }
+  @media(max-width:720px){ .checkout-layout { grid-template-columns: 1fr; } }
+
+  .checkout-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+  }
+  .section-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .section-box-title {
+    font-weight: 700; font-size: .9rem;
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 16px;
+    color: var(--muted);
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    position: sticky; top: 80px;
+  }
+  .summary-title { font-weight: 700; font-size: 1rem; margin-bottom: 16px; }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    font-size: .88rem; color: var(--muted); margin-bottom: 8px;
+  }
+  .summary-row.total {
+    color: var(--text); font-weight: 700; font-size: 1.05rem;
+    border-top: 1px solid var(--border); padding-top: 12px; margin-top: 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1 class="checkout-title">Checkout</h1>
+  <div class="checkout-layout">
+    <div>
+      <form method="POST" action="{{ url_for('order_place') }}">
+        <div class="section-box">
+          <div class="section-box-title">Delivery Address</div>
+          <div class="form-group">
+            <label class="form-label" for="address">Deliver to</label>
+            <input class="form-input" type="text" id="address" name="address"
+                   value="{{ user.address or '' }}"
+                   placeholder="Enter your delivery address" required>
+          </div>
+          <p style="font-size:.82rem; color:var(--muted);">
+            Delivering as <strong style="color:var(--text)">{{ session.user_name }}</strong>
+            ({{ session.user_email }})
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">
+          Continue to Payment →
+        </button>
+      </form>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-title">Order Summary</div>
+      {% for item_id, item in cart.items() %}
+      <div class="summary-row">
+        <span>{{ item.name }} ×{{ item.quantity }}</span>
+        <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
+      </div>
+      {% endfor %}
+      <div class="summary-row">
+        <span>Delivery</span><span>Free</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span>${{ "%.2f"|format(total) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

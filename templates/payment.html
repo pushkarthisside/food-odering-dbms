@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Payment — QuickBite{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pay-wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding-top: 32px;
+  }
+  .pay-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+  }
+  .pay-subtitle { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
+
+  .amount-banner {
+    background: linear-gradient(135deg, #ff5c28 0%, #ff8a00 100%);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .amount-label { font-size: .85rem; opacity: .85; }
+  .amount-value { font-size: 2rem; font-weight: 700; }
+  .lock-icon { font-size: 2rem; opacity: .7; }
+
+  /* Method tabs */
+  .method-tabs {
+    display: flex; gap: 8px;
+    margin-bottom: 20px;
+  }
+  .method-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    cursor: pointer;
+    font-size: .85rem; font-weight: 600;
+    color: var(--muted);
+    transition: all .15s;
+    user-select: none;
+  }
+  .method-tab.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(255,92,40,.08);
+  }
+  .method-tab-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+
+  /* Payment panels */
+  .pay-panel { display: none; }
+  .pay-panel.active { display: block; }
+
+  .card-visual {
+    background: linear-gradient(135deg, #1e3a5f, #0f2237);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    font-family: monospace;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-visual::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+  }
+  .card-chip { font-size: 1.6rem; margin-bottom: 16px; }
+  .card-number { font-size: 1.1rem; letter-spacing: 3px; margin-bottom: 14px; color: #c8d8e8; }
+  .card-footer { display: flex; justify-content: space-between; font-size: .78rem; color: #8aa0b4; }
+
+  .upi-box {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .upi-id {
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px;
+    margin: 8px 0;
+  }
+  .upi-note { font-size: .82rem; color: var(--muted); }
+
+  .cod-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 18px;
+  }
+  .cod-icon { font-size: 2.5rem; }
+  .cod-info p { font-weight: 600; margin-bottom: 4px; }
+  .cod-info span { font-size: .83rem; color: var(--muted); }
+
+  .fake-badge {
+    display: inline-block;
+    background: rgba(250,204,21,.1);
+    border: 1px solid rgba(250,204,21,.3);
+    color: var(--yellow);
+    font-size: .75rem; font-weight: 600;
+    padding: 2px 10px; border-radius: 20px;
+    margin-bottom: 12px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+<div class="pay-wrap">
+
+  <p class="fake-badge">🧪 Simulated Payment — No real charge</p>
+  <h1 class="pay-title">Complete Payment</h1>
+  <p class="pay-subtitle">Order #{{ order.order_id }} · {{ order.delivery_address }}</p>
+
+  <div class="amount-banner">
+    <div>
+      <div class="amount-label">Amount to pay</div>
+      <div class="amount-value">${{ "%.2f"|format(order.total_amount) }}</div>
+    </div>
+    <div class="lock-icon">🔒</div>
+  </div>
+
+  <!-- Method selector -->
+  <div class="method-tabs">
+    <div class="method-tab active" onclick="switchTab('card', this)">
+      <span class="method-tab-icon">💳</span> Card
+    </div>
+    <div class="method-tab" onclick="switchTab('upi', this)">
+      <span class="method-tab-icon">📱</span> UPI
+    </div>
+    <div class="method-tab" onclick="switchTab('cod', this)">
+      <span class="method-tab-icon">💵</span> Cash
+    </div>
+  </div>
+
+  <!-- Card panel -->
+  <div id="panel-card" class="pay-panel active">
+    <div class="card-visual">
+      <div class="card-chip">▪▌</div>
+      <div class="card-number">4242 •••• •••• 4242</div>
+      <div class="card-footer">
+        <span>Demo Card (any data works)</span>
+        <span>VISA</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Card number</label>
+      <input class="form-input" type="text" placeholder="1234 5678 9012 3456" maxlength="19">
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div class="form-group">
+        <label class="form-label">Expiry</label>
+        <input class="form-input" type="text" placeholder="MM / YY" maxlength="7">
+      </div>
+      <div class="form-group">
+        <label class="form-label">CVV</label>
+        <input class="form-input" type="password" placeholder="•••" maxlength="3">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Name on card</label>
+      <input class="form-input" type="text" placeholder="{{ session.user_name }}">
+    </div>
+    <form method="POST">
+      <input type="hidden" name="method" value="Card">
+      <button type="submit" class="btn btn-primary btn-lg">Pay ${{ "%.2f"|format(order.total_amount) }}</button>
+    </form>
+  </div>
+
+  <!-- UPI panel -->
+  <div id="panel-upi" class="pay-panel">
+    <div class="upi-box">
+      <p style="font-size:.85rem; color:var(--muted); margin-bottom:4px;">Pay to UPI ID</p>
+      <div class="upi-id">quickbite@okaxis</div>
+      <p class="upi-note">Open any UPI app and pay to the above ID,<br>then click Confirm below.</p>
+    </div>
+    <form method="POST">
+      <input type="hidden" name="method" value="UPI">
+      <button type="submit" class="btn btn-primary btn-lg">✓ I've paid via UPI</button>
+    </form>
+  </div>
+
+  <!-- COD panel -->
+  <div id="panel-cod" class="pay-panel">
+    <div class="cod-box">
+      <div class="cod-icon">💵</div>
+      <div class="cod-info">
+        <p>Cash on Delivery</p>
+        <span>Keep ${{ "%.2f"|format(order.total_amount) }} ready when your order arrives.</span>
+      </div>
+    </div>
+    <form method="POST">
+      <input type="hidden" name="method" value="Cash on Delivery">
+      <button type="submit" class="btn btn-primary btn-lg">Place Order (Pay at Door)</button>
+    </form>
+  </div>
+
+</div>
+</div>
+
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,16 +1,93 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}QuickBite — Order Food Online{% endblock %}
+
+{% block extra_head %}
+<style>
+  .hero {
+    padding: 40px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hero-greeting {
+    font-size: .9rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .hero-title em { font-style: italic; color: var(--accent); }
+
+  .resto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .resto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform .2s, border-color .2s;
+    cursor: pointer;
+  }
+  .resto-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+
+  .resto-thumb {
+    height: 120px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+    background: var(--surface2);
+  }
+  .resto-body { padding: 16px; }
+  .resto-name {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  .resto-meta {
+    display: flex; align-items: center; gap: 10px;
+    font-size: .82rem;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .resto-meta .dot { color: var(--border); }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Select a Restaurant</h2>
-<hr>
-{% for res in restaurants %}
-<div class="card">
-    <div>
-        <h3>{{ res.name }}</h3>
-        <p style="color:#666; margin: 0;">📍 {{ res.address }} | 📞 {{ res.phone }}</p>
-    </div>
-    <div>
-        <a href="{{ url_for('restaurant', restaurant_id=res.restaurant_id) }}" class="btn btn-secondary">View Menu</a>
-    </div>
+<div class="page">
+  <div class="hero">
+    <p class="hero-greeting">Hey, {{ session.user_name }} 👋</p>
+    <h1 class="hero-title">What are you<br><em>hungry</em> for today?</h1>
+    <span class="tag tag-accent">{{ restaurants | length }} restaurants open</span>
+  </div>
+
+  {% set emoji_map = {
+    'American': '🍔', 'Italian': '🍕', 'Chinese': '🥡',
+    'Japanese': '🍣', 'Mexican': '🌮'
+  } %}
+
+  <div class="resto-grid">
+    {% for r in restaurants %}
+    <a href="{{ url_for('restaurant', restaurant_id=r.restaurant_id) }}" class="resto-card">
+      <div class="resto-thumb">
+        {{ emoji_map.get(r.cuisine, '🍽️') }}
+      </div>
+      <div class="resto-body">
+        <div class="resto-name">{{ r.name }}</div>
+        <span class="tag">{{ r.cuisine }}</span>
+        <div class="resto-meta">
+          <span class="stars">★ {{ r.rating }}</span>
+          <span class="dot">·</span>
+          <span>{{ r.delivery_time }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
 </div>
-{% endfor %}
 {% endblock %}

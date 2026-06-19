@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Log in — QuickBite{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-wrap {
+    min-height: calc(100vh - 60px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px 24px;
+  }
+  .auth-card {
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 36px;
+  }
+  .auth-logo {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .auth-logo span { color: var(--text); }
+  .auth-tagline { text-align: center; color: var(--muted); font-size: .88rem; margin-bottom: 32px; }
+  .auth-footer { text-align: center; margin-top: 20px; font-size: .88rem; color: var(--muted); }
+  .auth-footer a { color: var(--accent); font-weight: 600; }
+  .divider-text {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--muted); font-size: .8rem;
+    margin: 20px 0;
+  }
+  .divider-text::before, .divider-text::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .demo-hint {
+    background: rgba(255,92,40,.08);
+    border: 1px dashed rgba(255,92,40,.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: .82rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .demo-hint strong { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">Quick<span>Bite</span></div>
+    <p class="auth-tagline">Good food, fast.</p>
+
+    <div class="demo-hint">
+      <strong>Demo account</strong><br>
+      Email: <code>demo@food.com</code> &nbsp;·&nbsp; Password: <code>demo123</code>
+    </div>
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" name="email"
+               placeholder="you@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" name="password"
+               placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" style="margin-top:8px;">
+        Log in
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      No account? <a href="{{ url_for('signup') }}">Create one</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

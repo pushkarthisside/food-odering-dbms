@@ -1,50 +1,124 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}Order #{{ order.order_id }} Status — QuickBite{% endblock %}
+
+{% block extra_head %}
+<style>
+  .status-title { font-family:'Fraunces',serif; font-size:1.6rem; margin-bottom:6px; }
+  .status-sub   { color:var(--muted); font-size:.9rem; margin-bottom:28px; }
+
+  .status-layout {
+    display:grid; grid-template-columns:1fr 300px; gap:24px; align-items:start;
+  }
+  @media(max-width:700px){.status-layout{grid-template-columns:1fr;}}
+
+  .tracker { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:20px; }
+  .tracker-title { font-weight:700; font-size:.88rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px; }
+
+  .steps { display:flex; flex-direction:column; gap:0; }
+  .step { display:flex; gap:14px; position:relative; }
+  .step:not(:last-child)::after {
+    content:''; position:absolute; left:16px; top:34px;
+    width:2px; height:calc(100% - 6px);
+    background:var(--border);
+  }
+  .step.done::after  { background:var(--green); }
+  .step-dot {
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; flex-shrink:0;
+    background:var(--surface2); border:2px solid var(--border);
+    margin-bottom:20px;
+  }
+  .step.done .step-dot  { border-color:var(--green);  background:rgba(74,222,128,.15); }
+  .step.active .step-dot{ border-color:var(--accent); background:rgba(255,92,40,.15); animation:pulse 1.5s infinite; }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,40,.4);}50%{box-shadow:0 0 0 6px rgba(255,92,40,0);}}
+  .step-text p { font-weight:600; font-size:.92rem; }
+  .step-text span { font-size:.8rem; color:var(--muted); }
+
+  .info-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .info-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+  .info-row:last-child{border:none;}
+  .info-row .lbl{color:var(--muted);}
+
+  .items-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .items-title { font-weight:700; font-size:.88rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
+  .item-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .item-row:last-child{border:none;}
+  .total-row { display:flex; justify-content:space-between; padding-top:12px; font-weight:700; }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Order Tracking Dashboard</h2>
-<p>Track metrics, triggers, and relational statuses execution logs for Order <strong>#{{ order.order_id }}</strong></p>
-<hr>
+<div class="page">
+  <a href="{{ url_for('my_orders') }}" style="color:var(--muted);font-size:.88rem;display:inline-flex;gap:6px;margin-bottom:16px;">← My Orders</a>
+  <h1 class="status-title">Order #{{ order.order_id }}</h1>
+  <p class="status-sub">{{ order.delivery_address }}</p>
 
-<div style="display: flex; gap: 20px; margin-bottom: 20px;">
-    <div style="flex: 1; background: #eef9f2; padding:15px; border-radius: 6px; border-left: 5px solid #2ecc71;">
-        <h4>Order Status</h4>
-        <p style="font-size: 24px; font-weight: bold; margin:0; color:#27ae60;">{{ order.status }}</p>
-        <small>Timestamp: {{ order.order_time }}</small>
-    </div>
-    
-    <div style="flex: 1; background: #fffde6; padding:15px; border-radius: 6px; border-left: 5px solid #f1c40f;">
-        <h4>Payment Status (From Trigger)</h4>
-        <p style="font-size: 18px; margin:0;"><strong>Method:</strong> {{ payment.method }}</p>
-        <p style="font-size: 18px; margin:0;"><strong>Status:</strong> {{ payment.status }}</p>
-    </div>
-</div>
+  <div class="status-layout">
+    <div>
+      <div class="tracker">
+        <div class="tracker-title">Live Tracking</div>
+        <div class="steps">
+          {% set s = order.status %}
 
-<h3>Items Ordered</h3>
-<table>
-    <thead>
-        <tr>
-            <th>Item Name</th>
-            <th>Unit Price Billed</th>
-            <th>Quantity Ordered</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
+          <div class="step {% if s in ['Confirmed','Out for Delivery','Delivered'] %}done{% elif s == 'Pending' %}active{% endif %}">
+            <div class="step-dot">📋</div>
+            <div class="step-text"><p>Order Placed</p><span>We got your order</span></div>
+          </div>
+
+          <div class="step {% if s in ['Out for Delivery','Delivered'] %}done{% elif s == 'Confirmed' %}active{% endif %}">
+            <div class="step-dot">👨‍🍳</div>
+            <div class="step-text"><p>Preparing</p><span>Kitchen is cooking</span></div>
+          </div>
+
+          <div class="step {% if s == 'Delivered' %}done{% elif s == 'Out for Delivery' %}active{% endif %}">
+            <div class="step-dot">🛵</div>
+            <div class="step-text"><p>Out for Delivery</p><span>On the way to you</span></div>
+          </div>
+
+          <div class="step {% if s == 'Delivered' %}active{% endif %}">
+            <div class="step-dot">✅</div>
+            <div class="step-text"><p>Delivered</p><span>Enjoy your meal!</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="items-card">
+        <div class="items-title">Items</div>
         {% for item in items %}
-        <tr>
-            <td>{{ item.name }}</td>
-            <td>${{ "%.2f"|format(item.price_at_order) }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>${{ "%.2f"|format(item.price_at_order * item.quantity) }}</td>
-        </tr>
+        <div class="item-row">
+          <span>{{ item.name }} ×{{ item.quantity }}</span>
+          <span>${{ "%.2f"|format(item.price_at_order * item.quantity) }}</span>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
+        <div class="total-row">
+          <span>Total</span>
+          <span style="color:var(--accent)">${{ "%.2f"|format(order.total_amount) }}</span>
+        </div>
+      </div>
+    </div>
 
-<h3 style="text-align: right;">Total Paid/Owed: ${{ "%.2f"|format(order.total_amount) }}</h3>
-
-<div style="margin-top:20px; padding:15px; background:#f5f5f5; border-radius:6px;">
-    <p><strong>Delivery Destination:</strong> {{ order.delivery_address }}</p>
+    <div class="info-card">
+      <div class="info-row"><span class="lbl">Order ID</span><span>#{{ order.order_id }}</span></div>
+      <div class="info-row">
+        <span class="lbl">Status</span>
+        <span>{{ order.status }}</span>
+      </div>
+      <div class="info-row">
+        <span class="lbl">Placed at</span>
+        <span>{{ order.order_time.strftime('%d %b %Y, %I:%M %p') }}</span>
+      </div>
+      {% if payment %}
+      <div class="info-row">
+        <span class="lbl">Payment</span>
+        <span>{{ payment.method }}</span>
+      </div>
+      <div class="info-row">
+        <span class="lbl">Paid</span>
+        <span>{% if payment.status == 'Paid' %}✅ Yes{% else %}⏳ Pending{% endif %}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
-
-<p style="margin-top:30px;"><a href="{{ url_for('home') }}">← Return to Restaurant Listing</a></p>
 {% endblock %}
